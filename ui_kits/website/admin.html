@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة تحكم — الاتحاد العام لنقابات العمال</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Cairo',sans-serif;background:#0f1a19;color:#edebe0;min-height:100vh;direction:rtl;}
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-thumb{background:#428177;border-radius:3px;}
+::-webkit-scrollbar-track{background:#0f1a19;}
+
+/* Layout */
+.layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh;}
+.sidebar{background:#002623;padding:0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.main{padding:28px;overflow-y:auto;}
+
+/* Sidebar */
+.sidebar-logo{padding:24px 20px;border-bottom:1px solid rgba(185,167,121,.12);display:flex;align-items:center;gap:12px;}
+.sidebar-logo img{width:44px;height:44px;border-radius:22px;object-fit:cover;border:2px solid #b9a779;}
+.sidebar-logo-text{font-size:12px;color:#b9a779;font-weight:700;line-height:1.4;}
+.nav-section{padding:16px 12px 8px;font-size:10px;color:rgba(185,167,121,.5);font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;margin:2px 8px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:rgba(237,235,224,.7);transition:all 160ms ease;border:none;background:none;width:calc(100% - 16px);text-align:right;}
+.nav-item:hover{background:rgba(66,129,119,.2);color:#edebe0;}
+.nav-item.active{background:rgba(66,129,119,.3);color:#b9a779;border-right:3px solid #b9a779;}
+.nav-item .icon{width:20px;height:20px;opacity:.7;flex-shrink:0;}
+.sidebar-bottom{margin-top:auto;padding:16px;border-top:1px solid rgba(185,167,121,.1);}
+.stats-mini{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.stat-mini-card{background:rgba(255,255,255,.05);border-radius:8px;padding:12px;text-align:center;}
+.stat-mini-num{font-size:22px;font-weight:900;color:#b9a779;}
+.stat-mini-lbl{font-size:10px;color:rgba(237,235,224,.5);margin-top:2px;}
+
+/* Cards */
+.card{background:#001e1b;border:1px solid rgba(66,129,119,.2);border-radius:12px;padding:20px;}
+.card-white{background:#fff;border:1px solid #dbd8c8;border-radius:12px;padding:20px;color:#002623;}
+
+/* Status badges */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.badge-submitted   {background:rgba(152,133,97,.15);color:#988561;}
+.badge-processing  {background:rgba(201,134,26,.15);color:#c9861a;}
+.badge-investigating{background:rgba(66,129,119,.15);color:#428177;}
+.badge-resolved    {background:rgba(58,125,68,.15);color:#3a7d44;}
+.badge-unread{background:rgba(192,57,43,.15);color:#c0392b;}
+.badge-read{background:rgba(152,133,97,.15);color:#988561;}
+.badge-replied{background:rgba(58,125,68,.15);color:#3a7d44;}
+
+/* Table */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th{padding:12px 16px;text-align:right;font-size:11px;font-weight:700;color:rgba(185,167,121,.7);border-bottom:1px solid rgba(66,129,119,.2);white-space:nowrap;}
+td{padding:12px 16px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle;}
+tr:hover td{background:rgba(66,129,119,.05);}
+tr.selected td{background:rgba(66,129,119,.1);}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border:none;transition:all 160ms ease;}
+.btn-teal{background:#428177;color:#edebe0;}
+.btn-teal:hover{background:#054239;}
+.btn-gold{background:rgba(185,167,121,.15);color:#b9a779;border:1px solid rgba(185,167,121,.3);}
+.btn-gold:hover{background:rgba(185,167,121,.25);}
+.btn-red{background:rgba(192,57,43,.15);color:#c0392b;border:1px solid rgba(192,57,43,.3);}
+.btn-sm{padding:5px 10px;font-size:11px;}
+
+/* Search & Filter bar */
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:20px;}
+.search-box{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.06);border:1px solid rgba(66,129,119,.2);border-radius:8px;padding:8px 14px;flex:1;min-width:200px;}
+.search-box input{background:none;border:none;outline:none;color:#edebe0;font-family:'Cairo',sans-serif;font-size:13px;width:100%;}
+.search-box input::placeholder{color:rgba(237,235,224,.35);}
+.filter-select{background:rgba(255,255,255,.06);border:1px solid rgba(66,129,119,.2);border-radius:8px;padding:8px 12px;color:#edebe0;font-family:'Cairo',sans-serif;font-size:12px;outline:none;cursor:pointer;}
+
+/* Modal overlay */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal{background:#002623;border:1px solid rgba(66,129,119,.3);border-radius:16px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto;position:relative;}
+.modal-header{padding:24px 28px;border-bottom:1px solid rgba(66,129,119,.2);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#002623;z-index:1;}
+.modal-body{padding:28px;}
+.modal-close{background:none;border:none;color:rgba(237,235,224,.5);cursor:pointer;font-size:20px;line-height:1;padding:4px 8px;}
+.modal-close:hover{color:#edebe0;}
+
+/* Detail rows */
+.detail-row{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid rgba(66,129,119,.1);}
+.detail-label{font-size:11px;color:rgba(185,167,121,.7);font-weight:700;min-width:130px;flex-shrink:0;}
+.detail-value{font-size:13px;color:#edebe0;flex:1;line-height:1.6;}
+
+/* Status action buttons */
+.status-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px;}
+.status-btn{flex:1;min-width:140px;padding:10px 16px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid;transition:all 180ms ease;text-align:center;}
+
+/* Attachments */
+.att-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;margin-top:8px;}
+.att-item{border:1px solid rgba(66,129,119,.2);border-radius:8px;padding:10px;text-align:center;cursor:pointer;transition:all 160ms ease;font-size:11px;color:rgba(237,235,224,.7);word-break:break-all;}
+.att-item:hover{border-color:#b9a779;background:rgba(185,167,121,.08);color:#b9a779;}
+
+/* Notes textarea */
+.notes-area{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(66,129,119,.2);border-radius:8px;padding:10px 14px;color:#edebe0;font-family:'Cairo',sans-serif;font-size:13px;resize:vertical;outline:none;min-height:80px;margin-top:8px;}
+.notes-area:focus{border-color:#428177;}
+
+/* Print styles */
+@media print{
+  body{background:#fff !important;color:#002623 !important;direction:rtl;}
+  .no-print{display:none !important;}
+  .print-doc{display:block !important;}
+  *{box-shadow:none !important;}
+}
+.print-doc{display:none;}
+
+/* A4 print template */
+@page{size:A4;margin:20mm 15mm;}
+
+/* Spinner */
+@keyframes spin{to{transform:rotate(360deg);}}
+.spin{width:16px;height:16px;border:2px solid rgba(237,235,224,.2);border-top-color:#b9a779;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;background:rgba(255,255,255,.04);border-radius:10px;padding:4px;margin-bottom:20px;}
+.tab{flex:1;padding:8px 16px;border:none;border-radius:7px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 160ms ease;background:none;color:rgba(237,235,224,.5);}
+.tab.active{background:#428177;color:#edebe0;}
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="../../assets/logo.jpg" alt="GFTU" onerror="this.style.display='none'"/>
+      <div>
+        <div class="sidebar-logo-text">لوحة تحكم<br/>الاتحاد العام</div>
+      </div>
+    </div>
+
+    <div class="nav-section">القائمة الرئيسية</div>
+    <button class="nav-item active" onclick="showSection('complaints')">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      الشكاوى
+    </button>
+    <button class="nav-item" onclick="showSection('messages')">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      الرسائل
+    </button>
+
+    <div class="sidebar-bottom">
+      <div class="stats-mini" id="stats-mini">
+        <div class="stat-mini-card"><div class="stat-mini-num" id="stat-total">—</div><div class="stat-mini-lbl">إجمالي الشكاوى</div></div>
+        <div class="stat-mini-card"><div class="stat-mini-num" id="stat-pending">—</div><div class="stat-mini-lbl">قيد المعالجة</div></div>
+        <div class="stat-mini-card"><div class="stat-mini-num" id="stat-msgs">—</div><div class="stat-mini-lbl">رسائل جديدة</div></div>
+        <div class="stat-mini-card"><div class="stat-mini-num" id="stat-resolved">—</div><div class="stat-mini-lbl">مُحلّة</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main" id="main-content">
+    <!-- Complaints Section -->
+    <section id="section-complaints">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+        <div>
+          <h1 style="font-size:22px;font-weight:900;color:#edebe0;">الشكاوى</h1>
+          <p style="font-size:13px;color:rgba(237,235,224,.5);margin-top:2px;">إدارة ومتابعة جميع الشكاوى المقدمة</p>
+        </div>
+        <button class="btn btn-gold" onclick="loadComplaints()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+          تحديث
+        </button>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" onclick="filterComplaints('all',this)">الكل</button>
+        <button class="tab" onclick="filterComplaints('submitted',this)">مقدّمة</button>
+        <button class="tab" onclick="filterComplaints('processing',this)">قيد المعالجة</button>
+        <button class="tab" onclick="filterComplaints('investigating',this)">قيد التحقيق</button>
+        <button class="tab" onclick="filterComplaints('resolved',this)">مُحلّة</button>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-box">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(237,235,224,.4)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="search-complaints" placeholder="بحث بالاسم أو الرقم المرجعي أو المحافظة..." oninput="applySearch()"/>
+        </div>
+      </div>
+
+      <div class="card" id="complaints-loading" style="text-align:center;padding:40px;">
+        <div class="spin" style="margin:0 auto 12px;"></div>
+        <div style="font-size:13px;color:rgba(237,235,224,.4);">جارٍ التحميل...</div>
+      </div>
+
+      <div class="card" id="complaints-table" style="display:none;padding:0;overflow:hidden;">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>الرقم المرجعي</th>
+                <th>الاسم</th>
+                <th>نوع الشكوى</th>
+                <th>المحافظة</th>
+                <th>التاريخ</th>
+                <th>الحالة</th>
+                <th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="complaints-tbody"></tbody>
+          </table>
+        </div>
+        <div id="complaints-empty" style="display:none;text-align:center;padding:40px;color:rgba(237,235,224,.3);font-size:13px;">لا توجد شكاوى تطابق البحث</div>
+      </div>
+    </section>
+
+    <!-- Messages Section -->
+    <section id="section-messages" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+        <div>
+          <h1 style="font-size:22px;font-weight:900;color:#edebe0;">الرسائل</h1>
+          <p style="font-size:13px;color:rgba(237,235,224,.5);margin-top:2px;">رسائل التواصل الواردة</p>
+        </div>
+        <button class="btn btn-gold" onclick="loadMessages()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+          تحديث
+        </button>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-box">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(237,235,224,.4)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="search-messages" placeholder="بحث في الرسائل..." oninput="applyMsgSearch()"/>
+        </div>
+      </div>
+
+      <div class="card" id="messages-loading" style="text-align:center;padding:40px;">
+        <div class="spin" style="margin:0 auto 12px;"></div>
+        <div style="font-size:13px;color:rgba(237,235,224,.4);">جارٍ التحميل...</div>
+      </div>
+
+      <div class="card" id="messages-table" style="display:none;padding:0;overflow:hidden;">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>الرقم المرجعي</th>
+                <th>الاسم</th>
+                <th>الموضوع</th>
+                <th>التواصل</th>
+                <th>التاريخ</th>
+                <th>الحالة</th>
+                <th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="messages-tbody"></tbody>
+          </table>
+        </div>
+        <div id="messages-empty" style="display:none;text-align:center;padding:40px;color:rgba(237,235,224,.3);font-size:13px;">لا توجد رسائل</div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Modal: تفاصيل الشكوى -->
+<div class="modal-overlay" id="complaint-modal" style="display:none;" onclick="if(event.target===this)closeModal('complaint-modal')">
+  <div class="modal" id="complaint-modal-content">
+    <div class="modal-header no-print">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:#edebe0;" id="modal-ref-title">—</div>
+        <div style="font-size:12px;color:rgba(185,167,121,.7);margin-top:2px;">تفاصيل الشكوى</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn btn-gold btn-sm" onclick="printComplaint()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          طباعة A4
+        </button>
+        <button class="modal-close" onclick="closeModal('complaint-modal')">×</button>
+      </div>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<!-- Modal: تفاصيل الرسالة -->
+<div class="modal-overlay" id="message-modal" style="display:none;" onclick="if(event.target===this)closeModal('message-modal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div style="font-size:16px;font-weight:700;color:#edebe0;" id="msg-modal-title">رسالة</div>
+      <button class="modal-close" onclick="closeModal('message-modal')">×</button>
+    </div>
+    <div class="modal-body" id="msg-modal-body"></div>
+  </div>
+</div>
+
+<!-- Print Template (مخفي، يظهر عند الطباعة فقط) -->
+<div class="print-doc" id="print-area"></div>
+
+<script>
+// ══════════════════════════════════════════
+// Config — ضع مفاتيحك هنا
+// ══════════════════════════════════════════
+const SUPABASE_URL = 'https://ciunafocibjzoxrdyqub.supabase.co';
+const SUPABASE_KEY = 'ضع_ANON_KEY_الجديد_هنا';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ══════════════════════════════════════════
+// State
+// ══════════════════════════════════════════
+let allComplaints = [];
+let allMessages   = [];
+let currentFilter = 'all';
+let currentComplaint = null;
+
+const STATUS = {
+  submitted:    {label:'مقدّمة',        cls:'badge-submitted'},
+  processing:   {label:'قيد المعالجة', cls:'badge-processing'},
+  investigating:{label:'قيد التحقيق',  cls:'badge-investigating'},
+  resolved:     {label:'تمت المعالجة', cls:'badge-resolved'},
+};
+const MSG_STATUS = {
+  unread: {label:'جديدة',    cls:'badge-unread'},
+  read:   {label:'مقروءة',   cls:'badge-read'},
+  replied:{label:'تم الرد',  cls:'badge-replied'},
+};
+
+// ══════════════════════════════════════════
+// Navigation
+// ══════════════════════════════════════════
+function showSection(name){
+  document.getElementById('section-complaints').style.display = name==='complaints'?'block':'none';
+  document.getElementById('section-messages').style.display   = name==='messages'?'block':'none';
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  event.target.closest('.nav-item').classList.add('active');
+  if(name==='messages') loadMessages();
+}
+
+// ══════════════════════════════════════════
+// Load Complaints
+// ══════════════════════════════════════════
+async function loadComplaints(){
+  document.getElementById('complaints-loading').style.display='block';
+  document.getElementById('complaints-table').style.display='none';
+  const {data,error}=await db.from('complaints').select('*').order('created_at',{ascending:false});
+  document.getElementById('complaints-loading').style.display='none';
+  if(error||!data){document.getElementById('complaints-loading').innerHTML='<div style="color:#c0392b;font-size:13px;">خطأ في التحميل: '+( error?.message||'')+'</div>';return;}
+  allComplaints=data;
+  updateStats();
+  renderComplaints(allComplaints);
+  document.getElementById('complaints-table').style.display='block';
+}
+
+function renderComplaints(list){
+  const filt = currentFilter==='all'?list:list.filter(c=>c.status===currentFilter);
+  const search = document.getElementById('search-complaints').value.toLowerCase();
+  const filtered = search ? filt.filter(c=>(c.full_name||'').toLowerCase().includes(search)||(c.ref_code||'').toLowerCase().includes(search)||(c.governorate||'').toLowerCase().includes(search)||(c.complaint_type||'').toLowerCase().includes(search)) : filt;
+  const tbody = document.getElementById('complaints-tbody');
+  tbody.innerHTML='';
+  document.getElementById('complaints-empty').style.display = filtered.length?'none':'block';
+  filtered.forEach(c=>{
+    const st=STATUS[c.status]||STATUS.submitted;
+    const date=new Date(c.created_at).toLocaleDateString('ar-SY',{year:'numeric',month:'short',day:'numeric'});
+    const hasAtt = c.attachments && c.attachments.length>0;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><code style="font-size:12px;color:#b9a779;background:rgba(185,167,121,.1);padding:3px 8px;border-radius:5px;">${c.ref_code}</code></td>
+      <td style="font-weight:600;color:#edebe0;">${escHtml(c.full_name||'—')}</td>
+      <td style="color:rgba(237,235,224,.7);">${escHtml(c.complaint_type||'—')}</td>
+      <td style="color:rgba(237,235,224,.7);">${escHtml(c.governorate||'—')}</td>
+      <td style="color:rgba(237,235,224,.5);font-size:12px;">${date}</td>
+      <td><span class="badge ${st.cls}">${hasAtt?'📎 ':''} ${st.label}</span></td>
+      <td>
+        <button class="btn btn-teal btn-sm" onclick="openComplaint('${c.id}')">عرض</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function filterComplaints(status, btn){
+  currentFilter=status;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderComplaints(allComplaints);
+}
+function applySearch(){ renderComplaints(allComplaints); }
+
+// ══════════════════════════════════════════
+// Load Messages
+// ══════════════════════════════════════════
+async function loadMessages(){
+  document.getElementById('messages-loading').style.display='block';
+  document.getElementById('messages-table').style.display='none';
+  const {data,error}=await db.from('messages').select('*').order('created_at',{ascending:false});
+  document.getElementById('messages-loading').style.display='none';
+  if(error||!data){return;}
+  allMessages=data;
+  renderMessages(allMessages);
+  document.getElementById('messages-table').style.display='block';
+}
+
+function renderMessages(list){
+  const search=document.getElementById('search-messages').value.toLowerCase();
+  const filtered=search?list.filter(m=>(m.full_name||'').toLowerCase().includes(search)||(m.subject||'').toLowerCase().includes(search)):list;
+  const tbody=document.getElementById('messages-tbody');
+  tbody.innerHTML='';
+  document.getElementById('messages-empty').style.display=filtered.length?'none':'block';
+  filtered.forEach(m=>{
+    const st=MSG_STATUS[m.status]||MSG_STATUS.unread;
+    const date=new Date(m.created_at).toLocaleDateString('ar-SY',{year:'numeric',month:'short',day:'numeric'});
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><code style="font-size:12px;color:#b9a779;background:rgba(185,167,121,.1);padding:3px 8px;border-radius:5px;">${m.ref_code}</code></td>
+      <td style="font-weight:600;color:#edebe0;">${escHtml(m.full_name||'—')}</td>
+      <td style="color:rgba(237,235,224,.7);">${escHtml(m.subject||'—')}</td>
+      <td style="color:rgba(237,235,224,.5);font-size:12px;">${escHtml(m.contact||'—')}</td>
+      <td style="color:rgba(237,235,224,.5);font-size:12px;">${date}</td>
+      <td><span class="badge ${st.cls}">${st.label}</span></td>
+      <td><button class="btn btn-teal btn-sm" onclick="openMessage('${m.id}')">عرض</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+function applyMsgSearch(){ renderMessages(allMessages); }
+
+// ══════════════════════════════════════════
+// Open Complaint Modal
+// ══════════════════════════════════════════
+function openComplaint(id){
+  currentComplaint = allComplaints.find(c=>c.id===id);
+  if(!currentComplaint)return;
+  const c=currentComplaint;
+  const st=STATUS[c.status]||STATUS.submitted;
+  const date=new Date(c.created_at).toLocaleDateString('ar-SY',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  document.getElementById('modal-ref-title').textContent=c.ref_code;
+
+  const attsHtml = c.attachments && c.attachments.length
+    ? `<div class="att-grid">${c.attachments.map(url=>{
+        const name=url.split('/').pop().replace(/^\d+_/,'');
+        const isImg=/\.(jpg|jpeg|png|gif|webp)/i.test(url);
+        return `<a href="${url}" target="_blank" class="att-item">
+          ${isImg?`<img src="${url}" style="width:100%;height:60px;object-fit:cover;border-radius:5px;margin-bottom:4px;" alt="${name}"/>`:'📄'}
+          <div style="font-size:10px;margin-top:4px;">${name.length>18?name.substring(0,18)+'...':name}</div>
+        </a>`;
+      }).join('')}</div>`
+    : '<span style="color:rgba(237,235,224,.35);font-size:12px;">لا توجد مرفقات</span>';
+
+  document.getElementById('modal-body').innerHTML=`
+    <!-- تفاصيل -->
+    <div class="detail-row"><div class="detail-label">الرقم المرجعي</div><div class="detail-value"><code style="color:#b9a779;font-size:14px;">${c.ref_code}</code></div></div>
+    <div class="detail-row"><div class="detail-label">الحالة الحالية</div><div class="detail-value"><span class="badge ${st.cls} no-print">${st.label}</span></div></div>
+    <div class="detail-row"><div class="detail-label">تاريخ التقديم</div><div class="detail-value">${date}</div></div>
+    <div class="detail-row"><div class="detail-label">الاسم الكامل</div><div class="detail-value">${escHtml(c.full_name||'—')}</div></div>
+    <div class="detail-row"><div class="detail-label">رقم الهوية</div><div class="detail-value">${escHtml(c.national_id||'—')}</div></div>
+    <div class="detail-row"><div class="detail-label">المحافظة</div><div class="detail-value">${escHtml(c.governorate||'—')}</div></div>
+    <div class="detail-row"><div class="detail-label">القطاع</div><div class="detail-value">${escHtml(c.sector||'—')}</div></div>
+    <div class="detail-row"><div class="detail-label">نوع الشكوى</div><div class="detail-value">${escHtml(c.complaint_type||'—')}</div></div>
+    <div class="detail-row"><div class="detail-label">جهة العمل</div><div class="detail-value">${escHtml(c.employer||'—')}</div></div>
+    <div class="detail-row"><div class="detail-label">معلومات التواصل</div><div class="detail-value">${escHtml(c.contact||'—')}</div></div>
+    <div class="detail-row" style="align-items:flex-start;"><div class="detail-label">تفاصيل الشكوى</div><div class="detail-value" style="line-height:1.8;">${escHtml(c.description||'—')}</div></div>
+    <div class="detail-row no-print" style="align-items:flex-start;"><div class="detail-label">المرفقات</div><div class="detail-value">${attsHtml}</div></div>
+
+    <!-- ملاحظات الإدارة -->
+    <div style="margin-top:20px;" class="no-print">
+      <div style="font-size:13px;font-weight:700;color:#b9a779;margin-bottom:6px;">ملاحظات الإدارة (تظهر للمتقدم)</div>
+      <textarea class="notes-area" id="admin-notes-input" placeholder="أضف ملاحظة تُرسل للمتقدم عند استعلامه...">${escHtml(c.admin_notes||'')}</textarea>
+      <button class="btn btn-gold btn-sm" style="margin-top:8px;" onclick="saveNotes()">حفظ الملاحظة</button>
+      <span id="notes-saved" style="margin-right:8px;font-size:12px;color:#3a7d44;display:none;">✓ تم الحفظ</span>
+    </div>
+
+    <!-- أزرار تغيير الحالة -->
+    <div class="status-actions no-print">
+      <div style="font-size:13px;font-weight:700;color:rgba(237,235,224,.6);width:100%;margin-bottom:4px;">تغيير حالة الشكوى:</div>
+      <button class="status-btn" style="border-color:#988561;color:#988561;background:rgba(152,133,97,.08);" onclick="updateStatus('submitted')">📥 مقدّمة</button>
+      <button class="status-btn" style="border-color:#c9861a;color:#c9861a;background:rgba(201,134,26,.08);" onclick="updateStatus('processing')">⚙️ قيد المعالجة</button>
+      <button class="status-btn" style="border-color:#428177;color:#428177;background:rgba(66,129,119,.08);" onclick="updateStatus('investigating')">🔍 قيد التحقيق</button>
+      <button class="status-btn" style="border-color:#3a7d44;color:#3a7d44;background:rgba(58,125,68,.08);" onclick="updateStatus('resolved')">✅ تمت المعالجة</button>
+    </div>
+    <div id="status-msg" style="margin-top:10px;font-size:12px;text-align:center;display:none;"></div>
+  `;
+
+  document.getElementById('complaint-modal').style.display='flex';
+}
+
+// ══════════════════════════════════════════
+// Update Status
+// ══════════════════════════════════════════
+async function updateStatus(newStatus){
+  if(!currentComplaint)return;
+  const msg=document.getElementById('status-msg');
+  msg.style.display='block';msg.style.color='#b9a779';msg.textContent='جارٍ التحديث...';
+  const {error}=await db.from('complaints').update({status:newStatus,updated_at:new Date().toISOString()}).eq('id',currentComplaint.id);
+  if(error){msg.style.color='#c0392b';msg.textContent='خطأ: '+error.message;return;}
+  currentComplaint.status=newStatus;
+  // Update local array
+  const idx=allComplaints.findIndex(c=>c.id===currentComplaint.id);
+  if(idx>=0)allComplaints[idx].status=newStatus;
+  const st=STATUS[newStatus];
+  msg.style.color='#3a7d44';msg.textContent='✓ تم تحديث الحالة إلى: '+st.label;
+  renderComplaints(allComplaints);
+  updateStats();
+  // Update badge in modal
+  const badge=document.getElementById('modal-body').querySelector('.badge');
+  if(badge){badge.className='badge '+st.cls+' no-print';badge.textContent=st.label;}
+  setTimeout(()=>{msg.style.display='none';},3000);
+}
+
+// ══════════════════════════════════════════
+// Save Notes
+// ══════════════════════════════════════════
+async function saveNotes(){
+  if(!currentComplaint)return;
+  const notes=document.getElementById('admin-notes-input').value;
+  const {error}=await db.from('complaints').update({admin_notes:notes}).eq('id',currentComplaint.id);
+  const el=document.getElementById('notes-saved');
+  if(!error){
+    currentComplaint.admin_notes=notes;
+    const idx=allComplaints.findIndex(c=>c.id===currentComplaint.id);
+    if(idx>=0)allComplaints[idx].admin_notes=notes;
+    el.style.display='inline';setTimeout(()=>el.style.display='none',2500);
+  }
+}
+
+// ══════════════════════════════════════════
+// Print A4
+// ══════════════════════════════════════════
+function printComplaint(){
+  if(!currentComplaint)return;
+  const c=currentComplaint;
+  const date=new Date(c.created_at).toLocaleDateString('ar-SY',{year:'numeric',month:'long',day:'numeric'});
+  const st=STATUS[c.status]||STATUS.submitted;
+
+  const printArea=document.getElementById('print-area');
+  printArea.innerHTML=`
+    <div style="font-family:'Cairo',sans-serif;direction:rtl;padding:0;color:#002623;">
+      <!-- رأس الصفحة -->
+      <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #002623;padding-bottom:16px;margin-bottom:24px;">
+        <div>
+          <div style="font-size:20px;font-weight:900;color:#002623;">الاتحاد العام لنقابات العمال</div>
+          <div style="font-size:11px;color:#428177;margin-top:2px;letter-spacing:.1em;">GENERAL FEDERATION OF TRADE UNIONS — SYRIAN ARAB REPUBLIC</div>
+        </div>
+        <div style="text-align:left;">
+          <div style="font-size:10px;color:#988561;">وثيقة رسمية</div>
+          <div style="font-size:10px;color:#988561;">Official Document</div>
+        </div>
+      </div>
+
+      <!-- عنوان الوثيقة -->
+      <div style="text-align:center;margin-bottom:28px;">
+        <div style="display:inline-block;border:2px solid #002623;padding:8px 32px;border-radius:4px;">
+          <div style="font-size:16px;font-weight:900;">وثيقة شكوى عمالية</div>
+        </div>
+      </div>
+
+      <!-- معلومات الشكوى -->
+      <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
+        <tr style="background:#f5f5f0;">
+          <td style="padding:8px 12px;font-size:11px;font-weight:700;color:#002623;width:150px;border:1px solid #ddd;">الرقم المرجعي</td>
+          <td style="padding:8px 12px;font-size:13px;font-weight:900;border:1px solid #ddd;">${c.ref_code}</td>
+          <td style="padding:8px 12px;font-size:11px;font-weight:700;color:#002623;width:150px;border:1px solid #ddd;">تاريخ التقديم</td>
+          <td style="padding:8px 12px;font-size:13px;border:1px solid #ddd;">${date}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 12px;font-size:11px;font-weight:700;color:#002623;border:1px solid #ddd;">الاسم الكامل</td>
+          <td style="padding:8px 12px;font-size:13px;border:1px solid #ddd;">${c.full_name||'—'}</td>
+          <td style="padding:8px 12px;font-size:11px;font-weight:700;color:#002623;border:1px solid #ddd;">رقم الهوية</td>
+          <td style="padding:8px 12px;font-size:13px;border:1px solid #ddd;">${c.national_id||'—'}</td>
+        </tr>
+        <tr style="background:#f5f5f0;">
+          <td style="padding:8px 12px;font-size:11px;font-weight:700;color:#002623;border:1px solid #ddd;">المحافظة</td>
+          <td style="padding:8px 12px;font-size:13px;border:1px solid #ddd;">${c.governorate||'—'}</td>
+          <td style="padding:8px 12px;font-size:11px;font-weight:700;color:#002623;border:1px solid #ddd;">القطاع</td>
+          <td style="padding:8px 12px;font-size:13px;border:1px solid #ddd;">${c.sector||'—'}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 12px;font-size:11px;font-weight:700;color:#002623;border:1px solid #ddd;">جهة العمل</td>
+          <td style="padding:8px 12px;font-size:13px;border:1px solid #ddd;">${c.employer||'—'}</td>
+          <td style="padding:8px 12px;font-size:11px;font-weight:700;color:#002623;border:1px solid #ddd;">معلومات التواصل</td>
+          <td style="padding:8px 12px;font-size:13px;border:1px solid #ddd;">${c.contact||'—'}</td>
+        </tr>
+        <tr style="background:#f5f5f0;">
+          <td style="padding:8px 12px;font-size:11px;font-weight:700;color:#002623;border:1px solid #ddd;">نوع الشكوى</td>
+          <td colspan="3" style="padding:8px 12px;font-size:13px;border:1px solid #ddd;">${c.complaint_type||'—'}</td>
+        </tr>
+      </table>
+
+      <!-- تفاصيل الشكوى -->
+      <div style="border:1px solid #ddd;border-radius:4px;overflow:hidden;margin-bottom:20px;">
+        <div style="background:#002623;color:#fff;padding:8px 14px;font-size:12px;font-weight:700;">تفاصيل الشكوى</div>
+        <div style="padding:14px;font-size:13px;line-height:1.9;min-height:80px;">${c.description||'—'}</div>
+      </div>
+
+      <!-- الحالة الحالية -->
+      <div style="display:flex;gap:24px;margin-bottom:28px;">
+        <div style="flex:1;border:1px solid #ddd;border-radius:4px;padding:12px;">
+          <div style="font-size:11px;font-weight:700;color:#988561;margin-bottom:4px;">الحالة الحالية</div>
+          <div style="font-size:14px;font-weight:700;">${st.label}</div>
+        </div>
+        ${c.admin_notes?`<div style="flex:2;border:1px solid #ddd;border-radius:4px;padding:12px;"><div style="font-size:11px;font-weight:700;color:#988561;margin-bottom:4px;">ملاحظات الاتحاد</div><div style="font-size:13px;line-height:1.7;">${c.admin_notes}</div></div>`:''}
+      </div>
+
+      <!-- توقيعات -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-top:40px;border-top:1px solid #ddd;padding-top:24px;">
+        <div style="text-align:center;">
+          <div style="height:50px;border-bottom:1px solid #002623;margin-bottom:8px;"></div>
+          <div style="font-size:11px;color:#002623;font-weight:700;">توقيع المتقدم بالشكوى</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="height:50px;border-bottom:1px solid #002623;margin-bottom:8px;"></div>
+          <div style="font-size:11px;color:#002623;font-weight:700;">توقيع المسؤول المختص</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="height:50px;border-bottom:1px solid #002623;margin-bottom:8px;"></div>
+          <div style="font-size:11px;color:#002623;font-weight:700;">ختم الاتحاد</div>
+        </div>
+      </div>
+
+      <!-- تذييل -->
+      <div style="margin-top:32px;border-top:1px solid #ddd;padding-top:12px;display:flex;justify-content:space-between;font-size:10px;color:#988561;">
+        <span>الاتحاد العام لنقابات العمال — الجمهورية العربية السورية</span>
+        <span>تاريخ الطباعة: ${new Date().toLocaleDateString('ar-SY')}</span>
+      </div>
+    </div>
+  `;
+
+  window.print();
+}
+
+// ══════════════════════════════════════════
+// Open Message Modal
+// ══════════════════════════════════════════
+async function openMessage(id){
+  const m=allMessages.find(x=>x.id===id);
+  if(!m)return;
+  const st=MSG_STATUS[m.status]||MSG_STATUS.unread;
+  const date=new Date(m.created_at).toLocaleDateString('ar-SY',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  // Mark as read
+  if(m.status==='unread'){
+    await db.from('messages').update({status:'read'}).eq('id',id);
+    m.status='read';renderMessages(allMessages);
+  }
+
+  document.getElementById('msg-modal-title').textContent=m.ref_code;
+  document.getElementById('msg-modal-body').innerHTML=`
+    <div class="detail-row"><div class="detail-label">الرقم المرجعي</div><div class="detail-value"><code style="color:#b9a779;">${m.ref_code}</code></div></div>
+    <div class="detail-row"><div class="detail-label">الاسم</div><div class="detail-value">${escHtml(m.full_name||'—')}</div></div>
+    <div class="detail-row"><div class="detail-label">التواصل</div><div class="detail-value">${escHtml(m.contact||'—')}</div></div>
+    <div class="detail-row"><div class="detail-label">الموضوع</div><div class="detail-value">${escHtml(m.subject||'—')}</div></div>
+    <div class="detail-row"><div class="detail-label">التاريخ</div><div class="detail-value">${date}</div></div>
+    <div class="detail-row" style="align-items:flex-start;"><div class="detail-label">نص الرسالة</div><div class="detail-value" style="line-height:1.8;white-space:pre-wrap;">${escHtml(m.body||'—')}</div></div>
+    <div style="margin-top:20px;">
+      <div style="font-size:13px;font-weight:700;color:#b9a779;margin-bottom:6px;">ملاحظات داخلية</div>
+      <textarea class="notes-area" id="msg-notes-input" placeholder="ملاحظات داخلية...">${escHtml(m.admin_notes||'')}</textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="btn btn-gold btn-sm" onclick="saveMsgNotes('${m.id}')">حفظ الملاحظة</button>
+        <button class="btn btn-teal btn-sm" onclick="markMsgReplied('${m.id}')">✓ تم الرد</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('message-modal').style.display='flex';
+}
+
+async function saveMsgNotes(id){
+  const notes=document.getElementById('msg-notes-input').value;
+  await db.from('messages').update({admin_notes:notes}).eq('id',id);
+  const m=allMessages.find(x=>x.id===id);if(m)m.admin_notes=notes;
+}
+async function markMsgReplied(id){
+  await db.from('messages').update({status:'replied'}).eq('id',id);
+  const m=allMessages.find(x=>x.id===id);if(m)m.status='replied';
+  renderMessages(allMessages);
+  closeModal('message-modal');
+}
+
+// ══════════════════════════════════════════
+// Stats
+// ══════════════════════════════════════════
+function updateStats(){
+  document.getElementById('stat-total').textContent=allComplaints.length;
+  document.getElementById('stat-pending').textContent=allComplaints.filter(c=>c.status==='processing'||c.status==='investigating').length;
+  document.getElementById('stat-msgs').textContent=allMessages.filter(m=>m.status==='unread').length;
+  document.getElementById('stat-resolved').textContent=allComplaints.filter(c=>c.status==='resolved').length;
+}
+
+// ══════════════════════════════════════════
+// Helpers
+// ══════════════════════════════════════════
+function closeModal(id){ document.getElementById(id).style.display='none'; }
+function escHtml(str){ const d=document.createElement('div');d.appendChild(document.createTextNode(str));return d.innerHTML; }
+
+// Init
+loadComplaints();
+</script>
+</body>
+</html>
