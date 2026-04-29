@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الاتحاد العام لنقابات العمال — G.F.T.U SYRIA</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{font-family:'Cairo','Tajawal',sans-serif;background:#edebe0;color:#002623;-webkit-font-smoothing:antialiased;}
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:#edebe0;}
+::-webkit-scrollbar-thumb{background:#428177;border-radius:3px;}
+#root{min-height:100%;display:flex;flex-direction:column;}
+@keyframes pulseRing{0%,100%{box-shadow:0 0 0 0 rgba(185,167,121,.15),0 0 0 8px rgba(185,167,121,.06);}50%{box-shadow:0 0 0 8px rgba(185,167,121,.12),0 0 0 16px rgba(185,167,121,.04);}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+@keyframes expandLine{from{opacity:0;transform:scaleX(0);}to{opacity:1;transform:scaleX(1);}}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spinner{width:18px;height:18px;border:2.5px solid rgba(237,235,224,.3);border-top-color:#edebe0;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;}
+</style>
+</head>
+<body>
+<div id="loading-screen" style="position:fixed;inset:0;z-index:9999;background:#002623;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s ease,visibility .6s ease;">
+  <div style="position:absolute;inset:0;pointer-events:none;background-image:repeating-linear-gradient(45deg,transparent,transparent 30px,rgba(66,129,119,.06) 30px,rgba(66,129,119,.06) 31px),repeating-linear-gradient(-45deg,transparent,transparent 30px,rgba(66,129,119,.06) 30px,rgba(66,129,119,.06) 31px);"></div>
+  <img src="../../assets/eagle.jpg" alt="" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:600px;opacity:.05;pointer-events:none;object-fit:cover;">
+  <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:28px;">
+    <div style="width:130px;height:130px;border-radius:65px;border:2px solid rgba(185,167,121,.3);padding:6px;animation:pulseRing 2s ease-in-out infinite;">
+      <img src="../../assets/logo.jpg" alt="GFTU Logo" style="width:100%;height:100%;border-radius:50%;object-fit:cover;box-shadow:0 0 40px rgba(185,167,121,.2);">
+    </div>
+    <div style="text-align:center;">
+      <div style="font-family:Cairo,sans-serif;font-weight:900;font-size:22px;color:#edebe0;margin-bottom:6px;animation:fadeUp .8s ease both;animation-delay:.2s;">الاتحاد العام لنقابات العمال</div>
+      <div style="font-family:Cairo,sans-serif;font-weight:400;font-size:13px;color:#b9a779;letter-spacing:.12em;animation:fadeUp .8s ease both;animation-delay:.35s;">G.F.T.U — SYRIAN ARAB REPUBLIC</div>
+    </div>
+    <div style="width:60px;height:1.5px;background:linear-gradient(90deg,transparent,#b9a779,transparent);animation:expandLine .8s ease both;animation-delay:.5s;"></div>
+    <div style="width:200px;height:3px;background:rgba(185,167,121,.15);border-radius:2px;overflow:hidden;">
+      <div id="loading-bar" style="height:100%;width:0%;border-radius:2px;background:linear-gradient(90deg,#428177,#b9a779);transition:width .1s linear;"></div>
+    </div>
+  </div>
+</div>
+<div id="root"></div>
+
+<script>
+// ══════════════════════════════════════════
+// ضع مفاتيحك هنا بعد تجديدها من Supabase
+// Settings -> API -> anon key
+// ══════════════════════════════════════════
+const SUPABASE_URL = 'https://ciunafocibjzoxrdyqub.supabase.co';
+const SUPABASE_KEY = 'ضع_ANON_KEY_الجديد_هنا';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+function makeRef(prefix){
+  return prefix+'-'+new Date().getFullYear()+'-'+Math.floor(10000+Math.random()*90000);
+}
+</script>
+
+<script type="text/babel">
+const GOVS=['دمشق','ريف دمشق','حلب','حمص','حماه','اللاذقية','طرطوس','إدلب','درعا','السويداء','القنيطرة','دير الزور','الرقة','الحسكة'];
+const SECTORS=[{id:'construction',label:'البناء والتشييد',icon:'🏗'},{id:'transport',label:'النقل والمواصلات',icon:'🚌'},{id:'health',label:'الصحة والخدمات الطبية',icon:'⚕️'},{id:'education',label:'التعليم والتدريب',icon:'📚'},{id:'trade',label:'التجارة والخدمات',icon:'🛒'},{id:'industry',label:'الصناعة والتصنيع',icon:'🏭'}];
+const NEWS=[
+  {id:1,title:'مجلس الاتحاد العام يعقد اجتماعه الدوري لمناقشة أوضاع العمال',date:'٢٧ أبريل ٢٠٢٦',cat:'union',excerpt:'ناقش المجلس أوضاع العمال وآليات تحسين بيئة العمل في جميع المحافظات السورية وسبل دعم الحقوق العمالية.'},
+  {id:2,title:'توقيع اتفاقية تعاون مع منظمة العمل الدولية لدعم العمال السوريين',date:'٢٤ أبريل ٢٠٢٦',cat:'union',excerpt:'وقّع الاتحاد العام اتفاقية شراكة استراتيجية مع منظمة العمل الدولية لتعزيز حقوق العمال وتطوير التشريعات.'},
+  {id:3,title:'إطلاق حملة توعية بحقوق العمال في المحافظات السورية',date:'٢٠ أبريل ٢٠٢٦',cat:'general',excerpt:'أطلق الاتحاد حملة توعوية واسعة النطاق تستهدف رفع الوعي بالحقوق العمالية وآليات تقديم الشكاوى.'},
+  {id:4,title:'ورشة عمل حول سلامة بيئة العمل في قطاع البناء',date:'١٨ أبريل ٢٠٢٦',cat:'general',excerpt:'نظّم الاتحاد ورشة عمل متخصصة حول معايير السلامة المهنية وطرق الوقاية من حوادث العمل.'},
+  {id:5,title:'بيان الاتحاد بشأن الحد الأدنى للأجور لعام ٢٠٢٦',date:'١٥ أبريل ٢٠٢٦',cat:'union',excerpt:'أصدر الاتحاد بياناً رسمياً يطالب فيه بمراجعة شاملة للحد الأدنى للأجور بما يتناسب مع غلاء المعيشة.'},
+  {id:6,title:'الاتحاد يشارك في مؤتمر العمل العربي بالقاهرة',date:'١٠ أبريل ٢٠٢٦',cat:'general',excerpt:'شارك وفد من الاتحاد في أعمال مؤتمر العمل العربي ممثلاً العمال السوريين على الصعيد العربي.'},
+];
+const SERVICES_SAMPLE=[
+  {name:'صيدلية الشفاء',discount:'٢٥٪',uses:'١٢',address:'شارع الثورة، دمشق',phone:'٠١١٢٣٤٥٦٧٨'},
+  {name:'مطعم البيت السوري',discount:'١٥٪',uses:'٨',address:'ساحة المرجة، دمشق',phone:'٠١١٩٨٧٦٥٤٣'},
+  {name:'مركز اللياقة الرياضية',discount:'٣٠٪',uses:'٥',address:'المزة، دمشق',phone:'٠١١٥٥٤٤٣٣٢'},
+  {name:'مستشفى دمشق الخاص',discount:'٢٠٪',uses:'٣',address:'أبو رمانة، دمشق',phone:'٠١١٧٧٨٨٩٩٠'},
+  {name:'مدرسة اللغات الحديثة',discount:'٤٠٪',uses:'١٠',address:'المالكي، دمشق',phone:'٠١١٣٣٢٢١١٠'},
+  {name:'شركة النقل الوطني',discount:'١٠٪',uses:'غير محدود',address:'جميع الفروع',phone:'٠١١١١٢٢٣٣٤'},
+];
+const STATUS_LABEL={
+  submitted:   {ar:'مقدّمة',        color:'#988561',bg:'rgba(152,133,97,.15)'},
+  processing:  {ar:'قيد المعالجة', color:'#c9861a',bg:'rgba(201,134,26,.15)'},
+  investigating:{ar:'قيد التحقيق', color:'#428177',bg:'rgba(66,129,119,.15)'},
+  resolved:    {ar:'تمت المعالجة', color:'#3a7d44',bg:'rgba(58,125,68,.15)'},
+};
+
+// ── Navbar ──
+const Navbar=({page,setPage,lang,setLang})=>{
+  const [sc,setSc]=React.useState(false);
+  React.useEffect(()=>{const h=()=>setSc(window.scrollY>20);window.addEventListener('scroll',h);return()=>window.removeEventListener('scroll',h);},[]);
+  const links=lang==='ar'?[['home','الرئيسية'],['news','الأخبار'],['services','الخدمات'],['complaints','الشكاوى'],['contact','تواصل معنا']]:[['home','Home'],['news','News'],['services','Services'],['complaints','Complaints'],['contact','Contact']];
+  return(
+    <nav style={{position:'fixed',top:0,right:0,left:0,zIndex:1000,background:sc?'rgba(0,38,35,.97)':'#002623',backdropFilter:sc?'blur(8px)':'none',height:'72px',display:'flex',alignItems:'center',padding:'0 32px',gap:'24px',boxShadow:sc?'0 4px 24px rgba(0,38,35,.3)':'none',transition:'all 250ms ease'}}>
+      <div onClick={()=>setPage('home')} style={{cursor:'pointer',display:'flex',alignItems:'center',gap:'10px',flexShrink:0}}>
+        <img src="../../assets/logo.jpg" alt="GFTU" style={{width:'44px',height:'44px',borderRadius:'22px',objectFit:'cover',border:'2px solid #b9a779'}}/>
+        <div style={{display:'flex',flexDirection:'column',lineHeight:1.2}}>
+          <span style={{color:'#edebe0',fontFamily:'Cairo,sans-serif',fontWeight:700,fontSize:'13px'}}>{lang==='ar'?'الاتحاد العام':'G.F.T.U'}</span>
+          <span style={{color:'#b9a779',fontFamily:'Cairo,sans-serif',fontWeight:400,fontSize:'10px'}}>{lang==='ar'?'لنقابات العمال':'Syria'}</span>
+        </div>
+      </div>
+      <div style={{flex:1,display:'flex',gap:'4px',justifyContent:'center'}}>
+        {links.map(([k,l])=><button key={k} onClick={()=>setPage(k)} style={{background:'none',border:'none',cursor:'pointer',padding:'8px 14px',borderRadius:'8px',fontFamily:'Cairo,sans-serif',fontSize:'14px',fontWeight:600,color:page===k?'#b9a779':'#edebe0',borderBottom:page===k?'2px solid #b9a779':'2px solid transparent',transition:'all 180ms ease'}}>{l}</button>)}
+      </div>
+      <button onClick={()=>setLang(lang==='ar'?'en':'ar')} style={{background:'rgba(185,167,121,.15)',border:'1.5px solid #b9a779',borderRadius:'9999px',padding:'6px 16px',fontFamily:'Cairo,sans-serif',fontSize:'12px',fontWeight:700,color:'#b9a779',cursor:'pointer',flexShrink:0}}>{lang==='ar'?'EN':'عربي'}</button>
+    </nav>
+  );
+};
+
+// ── Footer ──
+const Footer=({setPage,lang})=>{
+  const t=lang==='ar';
+  return(
+    <footer style={{background:'#002623',color:'#edebe0',fontFamily:'Cairo,sans-serif',direction:t?'rtl':'ltr'}}>
+      <div style={{maxWidth:'1280px',margin:'0 auto',padding:'48px 32px 32px',display:'grid',gridTemplateColumns:'2fr 1fr 1fr',gap:'48px'}}>
+        <div>
+          <div style={{display:'flex',alignItems:'center',gap:'12px',marginBottom:'16px'}}>
+            <img src="../../assets/logo.jpg" alt="GFTU" style={{width:'52px',height:'52px',borderRadius:'26px',objectFit:'cover',border:'2px solid #b9a779'}}/>
+            <div><div style={{fontWeight:700,fontSize:'15px'}}>{t?'الاتحاد العام لنقابات العمال':'General Federation of Trade Unions'}</div><div style={{fontSize:'11px',color:'#b9a779'}}>G.F.T.U SYRIA</div></div>
+          </div>
+          <p style={{color:'rgba(237,235,224,.7)',fontSize:'13px',lineHeight:1.8,margin:'0 0 20px'}}>{t?'يسعى الاتحاد العام لنقابات العمال في الجمهورية العربية السورية إلى حماية حقوق العمال وتعزيز بيئة عمل عادلة وكريمة لجميع العمال في سورية.':'The General Federation of Trade Unions works to protect workers\' rights and promote fair working conditions.'}</p>
+        </div>
+        <div>
+          <div style={{fontWeight:700,fontSize:'14px',color:'#b9a779',marginBottom:'16px',paddingBottom:'8px',borderBottom:'1px solid rgba(185,167,121,.2)'}}>{t?'الصفحات':'Pages'}</div>
+          {[['home',t?'الرئيسية':'Home'],['news',t?'الأخبار':'News'],['services',t?'الخدمات':'Services'],['complaints',t?'الشكاوى':'Complaints'],['contact',t?'تواصل معنا':'Contact']].map(([k,l])=><div key={k} style={{marginBottom:'8px'}}><button onClick={()=>setPage(k)} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(237,235,224,.75)',fontFamily:'Cairo,sans-serif',fontSize:'13px',padding:0}}>{l}</button></div>)}
+        </div>
+        <div>
+          <div style={{fontWeight:700,fontSize:'14px',color:'#b9a779',marginBottom:'16px',paddingBottom:'8px',borderBottom:'1px solid rgba(185,167,121,.2)'}}>{t?'التواصل':'Contact'}</div>
+          {[['📍',t?'دمشق، الجمهورية العربية السورية':'Damascus, Syrian Arab Republic'],['📞','+963 11 234 5678'],['✉️','info@gftu-syria.org'],['🕐',t?'الأحد – الخميس: ٨ص – ٤م':'Sun–Thu: 8am–4pm']].map(([ic,tx],i)=><div key={i} style={{display:'flex',gap:'8px',marginBottom:'10px'}}><span style={{fontSize:'13px',flexShrink:0}}>{ic}</span><span style={{color:'rgba(237,235,224,.75)',fontSize:'12px',lineHeight:1.5}}>{tx}</span></div>)}
+        </div>
+      </div>
+      <div style={{borderTop:'1px solid rgba(185,167,121,.15)',padding:'16px 32px',maxWidth:'1280px',margin:'0 auto',display:'flex',justifyContent:'space-between'}}>
+        <span style={{fontSize:'11px',color:'rgba(237,235,224,.5)'}}>{t?'© ٢٠٢٦ الاتحاد العام لنقابات العمال. جميع الحقوق محفوظة.':'© 2026 G.F.T.U Syria. All rights reserved.'}</span>
+        <span style={{fontSize:'11px',color:'rgba(185,167,121,.6)'}}>Powered by Hasan Zanoub</span>
+      </div>
+    </footer>
+  );
+};
+
+// ── HomePage ──
+const HomePage=({setPage,lang})=>{
+  const t=lang==='ar';
+  const stats=t?[{num:'١٢٤',label:'خبر منشور',d:'M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v2M4 11h8M4 16h8M4 6h4v4H4z'},{num:'٨٦',label:'خدمة متاحة',d:'M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16'},{num:'٣٧',label:'نقابة',d:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75'},{num:'١٤',label:'محافظة',d:'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0zM12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z'}]:[{num:'124',label:'Published News',d:'M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v2M4 11h8M4 16h8M4 6h4v4H4z'},{num:'86',label:'Services',d:'M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16'},{num:'37',label:'Unions',d:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75'},{num:'14',label:'Governorates',d:'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0zM12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z'}];
+  const [showAll,setShowAll]=React.useState(false);
+  return(
+    <div style={{direction:t?'rtl':'ltr'}}>
+      <section style={{background:'#002623',minHeight:'460px',display:'flex',alignItems:'center',position:'relative',overflow:'hidden',paddingTop:'72px'}}>
+        <div style={{position:'absolute',inset:0,backgroundImage:'repeating-linear-gradient(45deg,transparent,transparent 20px,rgba(66,129,119,.05) 20px,rgba(66,129,119,.05) 21px)'}}/>
+        <img src="../../assets/eagle.jpg" alt="" style={{position:'absolute',left:'50%',top:'50%',transform:'translate(-50%,-50%)',width:'480px',opacity:.07,pointerEvents:'none',objectFit:'cover'}}/>
+        <div style={{maxWidth:'960px',margin:'0 auto',padding:'72px 32px 64px',position:'relative',width:'100%'}}>
+          <div style={{display:'flex',alignItems:'center',gap:'18px',marginBottom:'28px'}}>
+            <img src="../../assets/logo.jpg" alt="" style={{width:'88px',height:'88px',borderRadius:'44px',objectFit:'cover',border:'2.5px solid rgba(185,167,121,.5)',flexShrink:0}}/>
+            <div><span style={{fontFamily:'Cairo,sans-serif',fontWeight:900,fontSize:'15px',color:'#b9a779',letterSpacing:'.12em',display:'block'}}>G.F.T.U SYRIA</span><span style={{fontFamily:'Cairo,sans-serif',fontSize:'11px',color:'rgba(185,167,121,.6)',letterSpacing:'.08em',display:'block'}}>GENERAL FEDERATION OF TRADE UNIONS</span></div>
+          </div>
+          <h1 style={{fontFamily:'Cairo,sans-serif',fontWeight:900,fontSize:'clamp(36px,5vw,62px)',color:'#edebe0',lineHeight:1.12,margin:'0 0 22px',maxWidth:'720px'}}>
+            {t?<>مرحباً بكم في<br/><span style={{color:'#b9a779'}}>الاتحاد العام</span><br/>لنقابات العمال</>:<>Welcome to the<br/><span style={{color:'#b9a779'}}>General Federation</span><br/>of Trade Unions</>}
+          </h1>
+          <p style={{fontFamily:'Cairo,sans-serif',fontSize:'16px',color:'rgba(237,235,224,.72)',lineHeight:1.85,margin:'0 0 36px',maxWidth:'540px'}}>{t?'نعمل من أجل حماية حقوق العمال السوريين وتعزيز بيئة عمل عادلة وكريمة في جميع أنحاء الجمهورية العربية السورية.':'We work to protect Syrian workers\' rights and promote fair working conditions across the Syrian Arab Republic.'}</p>
+          <div style={{display:'flex',gap:'12px',flexWrap:'wrap'}}>
+            <button onClick={()=>setPage('services')} style={{padding:'13px 32px',background:'#428177',color:'#edebe0',border:'none',borderRadius:'8px',fontFamily:'Cairo,sans-serif',fontSize:'14px',fontWeight:700,cursor:'pointer'}} onMouseEnter={e=>e.target.style.background='#054239'} onMouseLeave={e=>e.target.style.background='#428177'}>{t?'استعرض الخدمات':'View Services'}</button>
+            <button onClick={()=>setPage('complaints')} style={{padding:'13px 32px',background:'transparent',color:'#b9a779',border:'1.5px solid #b9a779',borderRadius:'8px',fontFamily:'Cairo,sans-serif',fontSize:'14px',fontWeight:700,cursor:'pointer'}}>{t?'تقديم شكوى':'File a Complaint'}</button>
+          </div>
+        </div>
+      </section>
+      <section style={{background:'#fff',padding:'0 32px'}}>
+        <div style={{maxWidth:'1280px',margin:'0 auto',display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'1px',background:'#dbd8c8',border:'1px solid #dbd8c8',transform:'translateY(-1px)'}}>
+          {stats.map((s,i)=>(
+            <div key={i} style={{background:'#fff',padding:'32px 24px',display:'flex',alignItems:'center',gap:'16px'}}>
+              <div style={{width:'52px',height:'52px',background:'#d4e6e4',borderRadius:'12px',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#428177" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={s.d}/></svg>
+              </div>
+              <div><div style={{fontFamily:'Cairo,sans-serif',fontWeight:900,fontSize:'32px',color:'#002623',lineHeight:1}}>{s.num}</div><div style={{fontFamily:'Cairo,sans-serif',fontSize:'13px',color:'#988561',marginTop:'4px'}}>{s.label}</div></div>
+            </div>
+          ))}
+        </div>
+      </section>
+      <section style={{padding:'64px 32px',background:'#edebe0'}}>
+        <div style={{maxWidth:'1280px',margin:'0 auto'}}>
+          <div style={{marginBottom:'32px'}}>
+            <span style={{display:'inline-block',padding:'4px 18px',border:'1.5px solid #b9a779',borderRadius:'9999px',fontSize:'12px',fontWeight:600,color:'#988561',marginBottom:'12px'}}>{t?'تغطية جغرافية':'Geographic Coverage'}</span>
+            <h2 style={{fontFamily:'Cairo,sans-serif',fontWeight:900,fontSize:'clamp(24px,3vw,36px)',color:'#002623'}}>{t?'المحافظات المشمولة':'Covered Governorates'}</h2>
+          </div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:'10px',marginBottom:'16px'}}>
+            {(showAll?GOVS:GOVS.slice(0,7)).map(g=><span key={g} style={{padding:'8px 20px',background:'#fff',border:'1.5px solid #dbd8c8',borderRadius:'9999px',fontFamily:'Cairo,sans-serif',fontSize:'14px',fontWeight:600,color:'#002623',cursor:'pointer',transition:'all 180ms ease'}} onMouseEnter={e=>{e.currentTarget.style.borderColor='#428177';e.currentTarget.style.background='#d4e6e4';}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#dbd8c8';e.currentTarget.style.background='#fff';}}>{g}</span>)}
+            <button onClick={()=>setShowAll(!showAll)} style={{padding:'8px 20px',background:'transparent',border:'1.5px dashed #b9a779',borderRadius:'9999px',fontFamily:'Cairo,sans-serif',fontSize:'13px',color:'#988561',cursor:'pointer'}}>{showAll?(t?'عرض أقل':'Show less'):(t?`+${GOVS.length-7} أخرى`:`+${GOVS.length-7} more`)}</button>
+          </div>
+        </div>
+      </section>
+      <section style={{padding:'64px 32px',background:'#fff'}}>
+        <div style={{maxWidth:'1280px',margin:'0 auto'}}>
+          <div style={{marginBottom:'40px',textAlign:'center'}}>
+            <span style={{display:'inline-block',padding:'4px 18px',border:'1.5px solid #b9a779',borderRadius:'9999px',fontSize:'12px',fontWeight:600,color:'#988561',marginBottom:'12px'}}>{t?'القطاعات المهنية':'Professional Sectors'}</span>
+            <h2 style={{fontFamily:'Cairo,sans-serif',fontWeight:900,fontSize:'clamp(24px,3vw,36px)',color:'#002623'}}>{t?'القطاعات التي ندعمها':'Sectors We Support'}</h2>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))',gap:'16px'}}>
+            {SECTORS.map(s=><div key={s.id} style={{background:'#f5f4ee',border:'1.5px solid #dbd8c8',borderRadius:'12px',padding:'28px 24px',cursor:'pointer',transition:'all 220ms ease'}} onMouseEnter={e=>{e.currentTarget.style.background='#d4e6e4';e.currentTarget.style.borderColor='#428177';e.currentTarget.style.transform='translateY(-2px)';}} onMouseLeave={e=>{e.currentTarget.style.background='#f5f4ee';e.currentTarget.style.borderColor='#dbd8c8';e.currentTarget.style.transform='translateY(0)';}}>
+              <div style={{fontSize:'36px',marginBottom:'12px'}}>{s.icon}</div>
+              <div style={{fontFamily:'Cairo,sans-serif',fontWeight:700,fontSize:'16px',color:'#002623'}}>{s.label}</div>
+            </div>)}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+};
+
+// ── NewsPage ──
+const NewsPage=({lang})=>{
+  const t=lang==='ar';
+  const [filter,setFilter]=React.useState('all');
+  const filtered=filter==='all'?NEWS:NEWS.filter(n=>n.cat===filter);
+  return(
+    <div style={{direction:t?'rtl':'ltr',paddingTop:'72px'}}>
+      <section style={{background:'#002623',padding:'56px 32px 48px',position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',inset:0,backgroundImage:'repeating-linear-gradient(45deg,transparent,transparent 20px,rgba(66,129,119,.06) 20px,rgba(66,129,119,.06) 21px)'}}/>
+        <div style={{maxWidth:'1280px',margin:'0 auto',position:'relative',textAlign:'center'}}>
+          <span style={{display:'inline-block',padding:'4px 18px',border:'1.5px solid #b9a779',borderRadius:'9999px',fontSize:'12px',fontWeight:600,color:'#b9a779',marginBottom:'16px',fontFamily:'Cairo,sans-serif'}}>{t?'أحدث الأخبار':'Latest News'}</span>
+          <h1 style={{fontFamily:'Cairo,sans-serif',fontWeight:900,fontSize:'48px',color:'#edebe0',margin:'0 0 10px'}}>{t?'الأخبار والبيانات':'News & Statements'}</h1>
+          <p style={{fontFamily:'Cairo,sans-serif',fontSize:'16px',color:'rgba(185,167,121,.85)',margin:0}}>{t?'تابع آخر أخبار الاتحاد العام وبياناته الرسمية':'Follow the latest news and official statements'}</p>
+        </div>
+      </section>
+      <section style={{padding:'40px 32px',background:'#edebe0'}}>
+        <div style={{maxWidth:'1280px',margin:'0 auto'}}>
+          <div style={{display:'flex',gap:'8px',marginBottom:'32px',flexWrap:'wrap'}}>
+            {[[t?'جميع الأخبار':'All News','all'],[t?'أخبار الاتحاد':'Union News','union'],[t?'أخبار عامة':'General','general']].map(([l,v])=><button key={v} onClick={()=>setFilter(v)} style={{padding:'8px 20px',borderRadius:'9999px',border:'1.5px solid',borderColor:filter===v?'#428177':'#dbd8c8',background:filter===v?'#428177':'transparent',color:filter===v?'#edebe0':'#988561',fontFamily:'Cairo,sans-serif',fontSize:'13px',fontWeight:600,cursor:'pointer'}}>{l}</button>)}
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(340px,1fr))',gap:'20px'}}>
+            {filtered.map(n=><div key={n.id} style={{background:'#fff',borderRadius:'12px',overflow:'hidden',border:'1px solid #dbd8c8',boxShadow:'0 2px 12px rgba(0,38,35,.05)',transition:'all 220ms ease',cursor:'pointer'}} onMouseEnter={e=>{e.currentTarget.style.boxShadow='0 8px 32px rgba(0,38,35,.12)';e.currentTarget.style.transform='translateY(-3px)';}} onMouseLeave={e=>{e.currentTarget.style.boxShadow='0 2px 12px rgba(0,38,35,.05)';e.currentTarget.style.transform='translateY(0)';}}>
+              <div style={{padding:'24px'}}>
+                <span style={{display:'inline-block',padding:'3px 12px',background:n.cat==='union'?'rgba(66,129,119,.12)':'rgba(152,133,97,.12)',borderRadius:'9999px',fontSize:'11px',fontWeight:700,color:n.cat==='union'?'#428177':'#988561',marginBottom:'12px'}}>{n.cat==='union'?(t?'اتحاد':'Union'):(t?'عام':'General')}</span>
+                <h3 style={{fontFamily:'Cairo,sans-serif',fontWeight:700,fontSize:'16px',color:'#002623',lineHeight:1.5,margin:'0 0 10px'}}>{n.title}</h3>
+                <p style={{fontFamily:'Cairo,sans-serif',fontSize:'13px',color:'#988561',lineHeight:1.7,margin:'0 0 16px'}}>{n.excerpt}</p>
+                <div style={{fontFamily:'Cairo,sans-serif',fontSize:'12px',color:'#b9a779'}}>{n.date}</div>
+              </div>
+            </div>)}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+};
+
+// ── ServicesPage ──
+const ServicesPage=({lang})=>{
+  const t=lang==='ar';
+  return(
+    <div style={{direction:t?'rtl':'ltr',paddingTop:'72px'}}>
+      <section style={{background:'#002623',padding:'56px 32px 48px'}}>
+        <div style={{maxWidth:'1280px',margin:'0 auto',textAlign:'center'}}>
+          <span style={{display:'inline-block',padding:'4px 18px',border:'1.5px solid #b9a779',borderRadius:'9999px',fontSize:'12px',fontWeight:600,color:'#b9a779',marginBottom:'16px',fontFamily:'Cairo,sans-serif'}}>{t?'خدمات الاتحاد':'Union Services'}</span>
+          <h1 style={{fontFamily:'Cairo,sans-serif',fontWeight:900,fontSize:'48px',color:'#edebe0',margin:'0 0 10px'}}>{t?'الخدمات المتاحة':'Available Services'}</h1>
+          <p style={{fontFamily:'Cairo,sans-serif',fontSize:'16px',color:'rgba(185,167,121,.85)',margin:0}}>{t?'استفد من الخصومات والمزايا المتاحة لأعضاء الاتحاد':'Discounts and benefits for union members'}</p>
+        </div>
+      </section>
+      <section style={{padding:'40px 32px',background:'#edebe0'}}>
+        <div style={{maxWidth:'1280px',margin:'0 auto',overflowX:'auto'}}>
+          <table style={{width:'100%',borderCollapse:'collapse',background:'#fff',borderRadius:'12px',overflow:'hidden',boxShadow:'0 4px 20px rgba(0,38,35,.07)'}}>
+            <thead>
+              <tr style={{background:'#002623'}}>
+                {[t?'المنشأة':'Facility',t?'الخصم':'Discount',t?'الاستخدامات':'Uses',t?'العنوان':'Address',t?'الهاتف':'Phone'].map((h,i)=><th key={i} style={{padding:'16px 20px',fontFamily:'Cairo,sans-serif',fontSize:'13px',fontWeight:700,color:'#b9a779',textAlign:t?'right':'left'}}>{h}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {SERVICES_SAMPLE.map((s,i)=><tr key={i} style={{borderBottom:'1px solid #f5f4ee',transition:'background 150ms ease'}} onMouseEnter={e=>e.currentTarget.style.background='#f5f4ee'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+                <td style={{padding:'16px 20px',fontFamily:'Cairo,sans-serif',fontSize:'14px',fontWeight:600,color:'#002623'}}>{s.name}</td>
+                <td style={{padding:'16px 20px'}}><span style={{background:'rgba(66,129,119,.12)',color:'#428177',padding:'4px 12px',borderRadius:'9999px',fontFamily:'Cairo,sans-serif',fontSize:'13px',fontWeight:700}}>{s.discount}</span></td>
+                <td style={{padding:'16px 20px',fontFamily:'Cairo,sans-serif',fontSize:'13px',color:'#988561'}}>{s.uses}</td>
+                <td style={{padding:'16px 20px',fontFamily:'Cairo,sans-serif',fontSize:'13px',color:'#988561'}}>{s.address}</td>
+                <td style={{padding:'16px 20px',fontFamily:'Cairo,sans-serif',fontSize:'13px',color:'#428177',direction:'ltr'}}>{s.phone}</td>
+              </tr>)}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
+};
+
+// ── ComplaintsPage ── مع Supabase كامل
+const ComplaintsPage=({lang})=>{
+  const t=lang==='ar';
+  const [form,setForm]=React.useState({full_name:'',national_id:'',governorate:'',sector:'',complaint_type:'',employer:'',description:'',contact:''});
+  const [files,setFiles]=React.useState([]);
+  const [loading,setLoading]=React.useState(false);
+  const [err,setErr]=React.useState('');
+  const [done,setDone]=React.useState(null);
+  const [trackCode,setTrackCode]=React.useState('');
+  const [trackRes,setTrackRes]=React.useState(null);
+  const [trackLoad,setTrackLoad]=React.useState(false);
+  const [trackErr,setTrackErr]=React.useState('');
+  const inp={width:'100%',padding:'10px 14px',border:'1.5px solid #dbd8c8',borderRadius:'8px',fontFamily:'Cairo,sans-serif',fontSize:'13px',color:'#002623',background:'#fff',outline:'none',transition:'border-color 200ms ease'};
+  const setF=(k,v)=>setForm(f=>({...f,[k]:v}));
+  const foc=e=>e.target.style.borderColor='#428177';
+  const blu=e=>e.target.style.borderColor='#dbd8c8';
+
+  const uploadFiles=async(ref)=>{
+    const urls=[];
+    for(const file of files){
+      const path=`${ref}/${Date.now()}_${file.name}`;
+      const {data,error}=await db.storage.from('gftu-attachments').upload(path,file);
+      if(!error&&data){const {data:pub}=db.storage.from('gftu-attachments').getPublicUrl(path);urls.push(pub.publicUrl);}
+    }
+    return urls;
+  };
+
+  const submit=async()=>{
+    if(!form.full_name.trim()||!form.description.trim()){setErr(t?'يرجى ملء الاسم ووصف الشكوى على الأقل':'Please fill name and complaint description');return;}
+    setLoading(true);setErr('');
+    try{
+      const ref=makeRef('GC');
+      const att=files.length?await uploadFiles(ref):[];
+      const {error:e}=await db.from('complaints').insert([{ref_code:ref,...form,attachments:att,status:'submitted'}]);
+      if(e)throw e;
+      setDone({ref});
+    }catch(e){setErr(t?`خطأ في الإرسال: ${e.message}`:`Submit error: ${e.message}`);}
+    finally{setLoading(false);}
+  };
+
+  const track=async()=>{
+    if(!trackCode.trim())return;
+    setTrackLoad(true);setTrackErr('');setTrackRes(null);
+    try{
+      const {data,error}=await db.from('complaints').select('*').eq('ref_code',trackCode.trim().toUpperCase()).single();
+      if(error||!data)setTrackErr(t?'لم يُعثر على شكوى بهذا الرقم':'Complaint not found');
+      else setTrackRes(data);
+    }catch{setTrackErr(t?'حدث خطأ أثناء البحث':'Search error');}
+    finally{setTrackLoad(false);}
+  };
+
+  const steps=[t?'استلام الشكوى وإعطاء رقم مرجعي':'Received & reference issued',t?'مراجعة أولية من الاتحاد':'Initial review',t?'التحقيق مع الجهة المعنية':'Investigation',t?'إصدار القرار وإخطار الشاكي':'Decision issued'];
+  const stIdx={submitted:0,processing:1,investigating:2,resolved:3};
+
+  return(
+    <div style={{direction:t?'rtl':'ltr',paddingTop:'72px'}}>
+      <section style={{background:'#002623',padding:'56px 32px 48px',position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',inset:0,backgroundImage:'repeating-linear-gradient(45deg,transparent,transparent 20px,rgba(66,129,119,.06) 20px,rgba(66,129,119,.06) 21px)'}}/>
+        <div style={{maxWidth:'1280px',margin:'0 auto',position:'relative',textAlign:'center'}}>
+          <span style={{display:'inline-block',padding:'4px 18px',border:'1.5px solid #b9a779',borderRadius:'9999px',fontSize:'12px',fontWeight:600,color:'#b9a779',marginBottom:'16px',fontFamily:'Cairo,sans-serif'}}>{t?'تقديم شكوى':'File a Complaint'}</span>
+          <h1 style={{fontFamily:'Cairo,sans-serif',fontWeight:900,fontSize:'48px',color:'#edebe0',margin:'0 0 10px'}}>{t?'حقوقك محفوظة معنا':'Your Rights Are Protected'}</h1>
+          <p style={{fontFamily:'Cairo,sans-serif',fontSize:'16px',color:'rgba(185,167,121,.85)',margin:0}}>{t?'قدّم شكواك وتابع حالتها بكود مرجعي فوري':'Submit and track your complaint with an instant reference code'}</p>
+        </div>
+      </section>
+      <section style={{padding:'40px 32px',background:'#edebe0'}}>
+        <div style={{maxWidth:'1280px',margin:'0 auto',display:'grid',gridTemplateColumns:'3fr 2fr',gap:'32px',alignItems:'start'}}>
+          <div style={{background:'#fff',borderRadius:'16px',padding:'32px',border:'1px solid #dbd8c8',boxShadow:'0 4px 20px rgba(0,38,35,.07)'}}>
+            {done?(
+              <div style={{textAlign:'center',padding:'32px 16px'}}>
+                <div style={{width:'80px',height:'80px',background:'#d4e6e4',borderRadius:'40px',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px',fontSize:'36px'}}>✓</div>
+                <h2 style={{fontFamily:'Cairo,sans-serif',fontWeight:900,fontSize:'22px',color:'#002623',marginBottom:'12px'}}>{t?'تم تقديم شكواك بنجاح':'Complaint Submitted!'}</h2>
+                <p style={{fontFamily:'Cairo,sans-serif',fontSize:'14px',color:'#988561',marginBottom:'24px'}}>{t?'احتفظ بالرقم المرجعي لمتابعة شكواك':'Keep this code to track your complaint'}</p>
+                <div style={{background:'#002623',borderRadius:'12px',padding:'20px 40px',display:'inline-block',marginBottom:'24px'}}>
+                  <div style={{fontFamily:'Cairo,sans-serif',fontSize:'11px',color:'#b9a779',marginBottom:'6px'}}>{t?'الرقم المرجعي':'Reference Code'}</div>
+                  <div style={{fontFamily:'monospace',fontSize:'28px',fontWeight:900,color:'#edebe0',letterSpacing:'.05em'}}>{done.ref}</div>
+                </div>
+                <br/>
+                <button onClick={()=>{setDone(null);setForm({full_name:'',national_id:'',governorate:'',sector:'',complaint_type:'',employer:'',description:'',contact:''});setFiles([]);}} style={{padding:'10px 28px',background:'#428177',color:'#edebe0',border:'none',borderRadius:'8px',fontFamily:'Cairo,sans-serif',fontWeight:700,fontSize:'14px',cursor:'pointer'}}>{t?'تقديم شكوى جديدة':'New Complaint'}</button>
+              </div>
+            ):(
+              <>
+                <h2 style={{fontFamily:'Cairo,sans-serif',fontWeight:700,fontSize:'20px',color:'#002623',marginBottom:'4px'}}>{t?'تقديم شكوى جديدة':'New Complaint'}</h2>
+                <p style={{fontFamily:'Cairo,sans-serif',fontSize:'13px',color:'#988561',marginBottom:'24px'}}>{t?'ستتلقى رقماً مرجعياً فور الإرسال':'You will receive a reference code immediately'}</p>
+                {err&&<div style={{background:'rgba(192,57,43,.1)',border:'1px solid #c0392b',borderRadius:'8px',padding:'10px 14px',marginBottom:'16px',fontFamily:'Cairo,sans-serif',fontSize:'13px',color:'#c0392b'}}>{err}</div>}
+                {[['الاسم الكامل *','Full Name *','full_name'],['رقم الهوية الوطنية','National ID','national_id'],['جهة العمل / اسم صاحب العمل','Employer Name','employer'],['معلومات التواصل (هاتف أو بريد)','Contact Info','contact']].map(([ar,en,k])=>(
+                  <div key={k} style={{marginBottom:'14px'}}>
+                    <label style={{display:'block',fontFamily:'Cairo,sans-serif',fontSize:'13px',fontWeight:600,color:'#002623',marginBottom:'5px'}}>{t?ar:en}</label>
+                    <input type="text" value={form[k]} onChange={e=>setF(k,e.target.value)} style={inp} onFocus={foc} onBlur={blu}/>
+                  </div>
+                ))}
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px',marginBottom:'14px'}}>
+                  <div>
+                    <label style={{display:'block',fontFamily:'Cairo,sans-serif',fontSize:'13px',fontWeight:600,color:'#002623',marginBottom:'5px'}}>{t?'المحافظة':'Governorate'}</label>
+                    <select value={form.governorate} onChange={e=>setF('governorate',e.target.value)} style={{...inp,appearance:'none'}} onFocus={foc} onBlur={blu}>
+                      <option value="">{t?'اختر':'Select'}</option>
+                      {GOVS.map(g=><option key={g} value={g}>{g}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{display:'block',fontFamily:'Cairo,sans-serif',fontSize:'13px',fontWeight:600,color:'#002623',marginBottom:'5px'}}>{t?'القطاع':'Sector'}</label>
+                    <select value={form.sector} onChange={e=>setF('sector',e.target.value)} style={{...inp,appearance:'none'}} onFocus={foc} onBlur={blu}>
+                      <option value="">{t?'اختر':'Select'}</option>
+                      {SECTORS.map(s=><option key={s.id} value={s.id}>{s.label}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div style={{marginBottom:'14px'}}>
+                  <label style={{display:'block',fontFamily:'Cairo,sans-serif',fontSize:'13px',fontWeight:600,color:'#002623',marginBottom:'5px'}}>{t?'نوع الشكوى':'Complaint Type'}</label>
+                  <select value={form.complaint_type} onChange={e=>setF('complaint_type',e.target.value)} style={{...inp,appearance:'none'}} onFocus={foc} onBlur={blu}>
+                    <option value="">{t?'اختر النوع':'Select type'}</option>
+                    {(t?['انتهاك حقوق عمالية','فصل تعسفي','عدم صرف الرواتب','بيئة عمل غير آمنة','تمييز وظيفي','مضايقة في العمل','أخرى']:['Labor rights violation','Wrongful termination','Unpaid wages','Unsafe environment','Discrimination','Workplace harassment','Other']).map(v=><option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+                <div style={{marginBottom:'14px'}}>
+                  <label style={{display:'block',fontFamily:'Cairo,sans-serif',fontSize:'13px',fontWeight:600,color:'#002623',marginBottom:'5px'}}>{t?'تفاصيل الشكوى *':'Complaint Details *'}</label>
+                  <textarea value={form.description} onChange={e=>setF('description',e.target.value)} rows="5" style={{...inp,resize:'vertical',minHeight:'120px'}} placeholder={t?'صِف شكواك بالتفصيل...':'Describe in detail...'} onFocus={foc} onBlur={blu}/>
+                </div>
+                <div style={{marginBottom:'20px'}}>
+                  <label style={{display:'block',fontFamily:'Cairo,sans-serif',fontSize:'13px',fontWeight:600,color:'#002623',marginBottom:'8px'}}>{t?'المرفقات (اختياري)':'Attachments (optional)'}</label>
+                  <label style={{display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:'8px',padding:'20px',border:'2px dashed #dbd8c8',borderRadius:'10px',cursor:'pointer',background:'#f5f4ee',transition:'all 200ms ease'}} onMouseEnter={e=>{e.currentTarget.style.borderColor='#428177';e.currentTarget.style.background='rgba(66,129,119,.04)';}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#dbd8c8';e.currentTarget.style.background='#f5f4ee';}}>
+                    <span style={{fontSize:'24px'}}>📎</span>
+                    <span style={{fontFamily:'Cairo,sans-serif',fontSize:'13px',color:'#988561'}}>{files.length>0?`${files.length} ${t?'ملف مختار':'files selected'}`:(t?'انقر لرفع صور أو وثائق':'Click to upload')}</span>
+                    <input type="file" multiple accept="image/*,.pdf,.doc,.docx" style={{display:'none'}} onChange={e=>setFiles(Array.from(e.target.files))}/>
+                  </label>
+                  {files.length>0&&<div style={{marginTop:'8px',display:'flex',flexWrap:'wrap',gap:'6px'}}>{files.map((f,i)=><span key={i} style={{background:'#d4e6e4',color:'#054239',padding:'3px 10px',borderRadius:'20px',fontFamily:'Cairo,sans-serif',fontSize:'12px',display:'flex',alignItems:'center',gap:'6px'}}>{f.name.length>22?f.name.substring(0,22)+'...':f.name}<span onClick={()=>setFiles(fs=>fs.filter((_,j)=>j!==i))} style={{cursor:'pointer',fontWeight:700}}>×</span></span>)}</div>}
+                </div>
+                <button onClick={submit} disabled={loading} style={{width:'100%',padding:'13px',background:loading?'#988561':'#428177',color:'#edebe0',border:'none',borderRadius:'8px',fontFamily:'Cairo,sans-serif',fontSize:'15px',fontWeight:700,cursor:loading?'not-allowed':'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:'10px'}} onMouseEnter={e=>{if(!loading)e.currentTarget.style.background='#054239';}} onMouseLeave={e=>{if(!loading)e.currentTarget.style.background='#428177';}}>
+                  {loading?<><span className="spinner"></span>{t?'جارٍ الإرسال...':'Submitting...'}</>:(t?'إرسال الشكوى':'Submit Complaint')}
+                </button>
+              </>
+            )}
+          </div>
+          <div style={{display:'flex',flexDirection:'column',gap:'20px'}}>
+            <div style={{background:'#002623',borderRadius:'16px',padding:'24px',color:'#edebe0'}}>
+              <h3 style={{fontFamily:'Cairo,sans-serif',fontWeight:700,fontSize:'16px',color:'#b9a779',margin:'0 0 16px'}}>🔍 {t?'تتبع شكواك':'Track Your Complaint'}</h3>
+              <div style={{display:'flex',gap:'8px',marginBottom:'12px'}}>
+                <input value={trackCode} onChange={e=>setTrackCode(e.target.value)} onKeyDown={e=>e.key==='Enter'&&track()} placeholder="GC-2026-XXXXX" style={{flex:1,padding:'9px 12px',border:'1.5px solid rgba(185,167,121,.3)',borderRadius:'8px',fontFamily:'monospace',fontSize:'13px',color:'#edebe0',background:'rgba(255,255,255,.07)',outline:'none'}} onFocus={e=>e.target.style.borderColor='#b9a779'} onBlur={e=>e.target.style.borderColor='rgba(185,167,121,.3)'}/>
+                <button onClick={track} disabled={trackLoad} style={{padding:'9px 16px',background:'#428177',color:'#edebe0',border:'none',borderRadius:'8px',fontFamily:'Cairo,sans-serif',fontSize:'13px',fontWeight:700,cursor:'pointer'}}>{trackLoad?'...':(t?'بحث':'Search')}</button>
+              </div>
+              {trackErr&&<div style={{fontFamily:'Cairo,sans-serif',fontSize:'13px',color:'#f0857a',padding:'8px',background:'rgba(192,57,43,.15)',borderRadius:'6px'}}>{trackErr}</div>}
+              {trackRes&&(()=>{
+                const st=STATUS_LABEL[trackRes.status]||STATUS_LABEL.submitted;
+                const si=stIdx[trackRes.status]||0;
+                return(
+                  <div style={{marginTop:'12px',background:'rgba(255,255,255,.07)',borderRadius:'10px',padding:'16px'}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'10px'}}>
+                      <span style={{fontFamily:'monospace',fontSize:'13px',color:'rgba(237,235,224,.7)'}}>{trackRes.ref_code}</span>
+                      <span style={{fontFamily:'Cairo,sans-serif',fontSize:'12px',fontWeight:700,padding:'3px 10px',borderRadius:'20px',background:st.bg,color:st.color}}>{st.ar}</span>
+                    </div>
+                    <div style={{fontFamily:'Cairo,sans-serif',fontSize:'14px',fontWeight:600,color:'#edebe0',marginBottom:'4px'}}>{trackRes.full_name}</div>
+                    <div style={{fontFamily:'Cairo,sans-serif',fontSize:'12px',color:'rgba(185,167,121,.8)',marginBottom:'14px'}}>{new Date(trackRes.created_at).toLocaleDateString('ar-SY',{year:'numeric',month:'long',day:'numeric'})}</div>
+                    <div style={{display:'flex',gap:'4px',alignItems:'center',marginBottom:'8px'}}>
+                      {steps.map((s,i)=>(
+                        <React.Fragment key={i}>
+                          <div style={{flexShrink:0,width:'22px',height:'22px',borderRadius:'11px',background:i<=si?'#b9a779':'rgba(185,167,121,.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'10px',fontWeight:700,color:i<=si?'#002623':'#b9a779'}}>{i<si?'✓':i+1}</div>
+                          {i<steps.length-1&&<div style={{flex:1,height:'2px',background:i<si?'#b9a779':'rgba(185,167,121,.2)'}}/>}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                    <div style={{fontFamily:'Cairo,sans-serif',fontSize:'11px',color:'rgba(185,167,121,.7)',textAlign:'center'}}>{steps[si]}</div>
+                    {trackRes.admin_notes&&<div style={{marginTop:'12px',background:'rgba(185,167,121,.1)',borderRadius:'8px',padding:'10px',fontFamily:'Cairo,sans-serif',fontSize:'12px',color:'#b9a779'}}><strong>{t?'ملاحظة الاتحاد:':'Note:'}</strong> {trackRes.admin_notes}</div>}
+                  </div>
+                );
+              })()}
+            </div>
+            <div style={{background:'#002623',borderRadius:'16px',padding:'24px',color:'#edebe0'}}>
+              <h3 style={{fontFamily:'Cairo,sans-serif',fontWeight:700,fontSize:'15px',color:'#b9a779',margin:'0 0 14px'}}>{t?'إحصائية الشكاوى':'Stats'}</h3>
+              {[[t?'شكاوى مقدمة':'Submitted','٢٤٨'],[t?'قيد المعالجة':'Processing','٦٧'],[t?'مُغلقة':'Resolved','١٨١']].map(([l,n],i)=><div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 0',borderBottom:i<2?'1px solid rgba(185,167,121,.15)':''}}><span style={{fontFamily:'Cairo,sans-serif',fontSize:'13px',color:'rgba(237,235,224,.75)'}}>{l}</span><span style={{fontFamily:'Cairo,sans-serif',fontSize:'22px',fontWeight:900,color:'#b9a779'}}>{n}</span></div>)}
+            </div>
+            <div style={{background:'#fff',borderRadius:'16px',padding:'24px',border:'1px solid #dbd8c8'}}>
+              <h3 style={{fontFamily:'Cairo,sans-serif',fontWeight:700,fontSize:'15px',color:'#002623',margin:'0 0 16px'}}>{t?'مراحل المعالجة':'Processing Stages'}</h3>
+              {steps.map((s,i)=><div key={i} style={{display:'flex',gap:'12px',alignItems:'flex-start',marginBottom:i<steps.length-1?'14px':0}}>
+                <div style={{width:'28px',height:'28px',background:i===0?'#428177':'#dbd8c8',borderRadius:'14px',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:'12px',fontWeight:700,color:i===0?'#fff':'#988561'}}>{i+1}</div>
+                <div style={{fontFamily:'Cairo,sans-serif',fontSize:'13px',color:'#054239',lineHeight:1.5,paddingTop:'5px'}}>{s}</div>
+              </div>)}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+};
+
+// ── ContactPage ── مع Supabase
+const ContactPage=({lang})=>{
+  const t=lang==='ar';
+  const [form,setForm]=React.useState({full_name:'',contact:'',subject:'',body:''});
+  const [loading,setLoading]=React.useState(false);
+  const [err,setErr]=React.useState('');
+  const [done,setDone]=React.useState(null);
+  const inp={width:'100%',padding:'10px 14px',border:'1.5px solid #dbd8c8',borderRadius:'8px',fontFamily:'Cairo,sans-serif',fontSize:'13px',color:'#002623',background:'#fff',outline:'none',boxSizing:'border-box',transition:'border-color 200ms ease'};
+  const setF=(k,v)=>setForm(f=>({...f,[k]:v}));
+  const foc=e=>e.target.style.borderColor='#428177';
+  const blu=e=>e.target.style.borderColor='#dbd8c8';
+  const socials=[
+    {label:'Facebook',color:'#1877F2',href:'https://facebook.com',icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>},
+    {label:'X / Twitter',color:'#000',href:'https://x.com',icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>},
+    {label:'Telegram',color:'#229ED9',href:'https://t.me',icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M21.198 2.433a2.242 2.242 0 0 0-1.022.215l-16.5 6.75a2.25 2.25 0 0 0 .128 4.21l3.574 1.117 1.977 5.93a.75.75 0 0 0 1.184.336l2.455-2.119 3.763 2.804a2.254 2.254 0 0 0 3.516-1.406l2.75-16.5a2.25 2.25 0 0 0-1.825-2.337z"/></svg>},
+    {label:'WhatsApp',color:'#25D366',href:'https://wa.me',icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.089.534 4.058 1.472 5.775L.057 23.927a.5.5 0 0 0 .625.607l6.41-1.676A11.942 11.942 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.741 9.741 0 0 1-4.979-1.366l-.356-.214-3.705.97 1.003-3.595-.233-.372A9.752 9.752 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>},
+  ];
+  const send=async()=>{
+    if(!form.full_name.trim()||!form.body.trim()){setErr(t?'يرجى ملء الاسم ونص الرسالة':'Please fill name and message');return;}
+    setLoading(true);setErr('');
+    try{
+      const ref=makeRef('GM');
+      const {error:e}=await db.from('messages').insert([{ref_code:ref,...form,status:'unread'}]);
+      if(e)throw e;
+      setDone({ref});
+    }catch(e){setErr(t?`خطأ: ${e.message}`:`Error: ${e.message}`);}
+    finally{setLoading(false);}
+  };
+  return(
+    <div style={{direction:t?'rtl':'ltr',paddingTop:'72px'}}>
+      <section style={{background:'#002623',padding:'56px 32px 48px',position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',inset:0,backgroundImage:'repeating-linear-gradient(45deg,transparent,transparent 20px,rgba(66,129,119,.06) 20px,rgba(66,129,119,.06) 21px)'}}/>
+        <div style={{maxWidth:'1280px',margin:'0 auto',position:'relative',textAlign:'center'}}>
+          <span style={{display:'inline-block',padding:'4px 18px',border:'1.5px solid #b9a779',borderRadius:'9999px',fontSize:'12px',fontWeight:600,color:'#b9a779',marginBottom:'16px',fontFamily:'Cairo,sans-serif'}}>{t?'تواصل معنا':'Contact Us'}</span>
+          <h1 style={{fontFamily:'Cairo,sans-serif',fontWeight:900,fontSize:'48px',color:'#edebe0',margin:'0 0 10px'}}>{t?'نحن هنا لخدمتكم':'We Are Here to Serve You'}</h1>
+          <p style={{fontFamily:'Cairo,sans-serif',fontSize:'16px',color:'rgba(185,167,121,.85)',margin:0}}>{t?'تواصل معنا عبر القنوات الرسمية للاتحاد':'Reach us through the Federation\'s official channels'}</p>
+        </div>
+      </section>
+      <section style={{padding:'48px 32px',background:'#edebe0'}}>
+        <div style={{maxWidth:'1280px',margin:'0 auto',display:'grid',gridTemplateColumns:'2fr 3fr',gap:'32px',alignItems:'start'}}>
+          <div style={{display:'flex',flexDirection:'column',gap:'20px'}}>
+            <div style={{background:'#fff',borderRadius:'16px',padding:'28px',border:'1px solid #dbd8c8',boxShadow:'0 2px 12px rgba(0,38,35,.06)'}}>
+              <h2 style={{fontFamily:'Cairo,sans-serif',fontWeight:700,fontSize:'18px',color:'#002623',margin:'0 0 20px',paddingBottom:'12px',borderBottom:'2px solid #b9a779'}}>{t?'معلومات التواصل':'Contact Information'}</h2>
+              {[{icon:'📍',label:t?'العنوان':'Address',value:t?'دمشق، الجمهورية العربية السورية':'Damascus, Syrian Arab Republic'},{icon:'📞',label:t?'الهاتف':'Phone',value:'+963 11 234 5678'},{icon:'✉️',label:t?'البريد الإلكتروني':'Email',value:'info@gftu-syria.org'},{icon:'🕐',label:t?'ساعات العمل':'Working Hours',value:t?'الأحد – الخميس: ٨ص – ٤م':'Sun – Thu: 8:00am – 4:00pm'}].map((item,i)=>(
+                <div key={i} style={{display:'flex',gap:'14px',alignItems:'flex-start',marginBottom:'16px'}}>
+                  <div style={{width:'40px',height:'40px',background:'#d4e6e4',borderRadius:'10px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'18px',flexShrink:0}}>{item.icon}</div>
+                  <div><div style={{fontFamily:'Cairo,sans-serif',fontSize:'11px',color:'#988561',marginBottom:'2px'}}>{item.label}</div><div style={{fontFamily:'Cairo,sans-serif',fontSize:'13px',fontWeight:600,color:'#002623'}}>{item.value}</div></div>
+                </div>
+              ))}
+            </div>
+            <div style={{background:'#fff',borderRadius:'16px',padding:'28px',border:'1px solid #dbd8c8',boxShadow:'0 2px 12px rgba(0,38,35,.06)'}}>
+              <h2 style={{fontFamily:'Cairo,sans-serif',fontWeight:700,fontSize:'18px',color:'#002623',margin:'0 0 16px'}}>{t?'تابعنا على وسائل التواصل':'Follow Us'}</h2>
+              <div style={{display:'flex',flexWrap:'wrap',gap:'10px'}}>
+                {socials.map(s=><a key={s.label} href={s.href} target="_blank" rel="noreferrer" style={{display:'flex',alignItems:'center',gap:'8px',padding:'8px 14px',border:'1.5px solid #dbd8c8',borderRadius:'8px',color:'#002623',textDecoration:'none',fontFamily:'Cairo,sans-serif',fontSize:'12px',fontWeight:600,background:'#f5f4ee'}} onMouseEnter={e=>{e.currentTarget.style.borderColor=s.color;e.currentTarget.style.color=s.color;e.currentTarget.style.background='#fff';}} onMouseLeave={e=>{e.currentTarget.style.borderColor='#dbd8c8';e.currentTarget.style.color='#002623';e.currentTarget.style.background='#f5f4ee';}}><span style={{color:'inherit'}}>{s.icon}</span>{s.label}</a>)}
+              </div>
+            </div>
+          </div>
+          <div style={{background:'#fff',borderRadius:'16px',padding:'32px',border:'1px solid #dbd8c8',boxShadow:'0 4px 20px rgba(0,38,35,.07)'}}>
+            {done?(
+              <div style={{textAlign:'center',padding:'40px 20px'}}>
+                <div style={{width:'72px',height:'72px',background:'#d4e6e4',borderRadius:'36px',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px',fontSize:'32px'}}>✓</div>
+                <h3 style={{fontFamily:'Cairo,sans-serif',fontWeight:700,fontSize:'20px',color:'#002623',marginBottom:'8px'}}>{t?'تم إرسال رسالتك!':'Message Sent!'}</h3>
+                <p style={{fontFamily:'Cairo,sans-serif',fontSize:'14px',color:'#988561',marginBottom:'16px'}}>{t?'سنتواصل معك في أقرب وقت ممكن':'We\'ll get back to you soon'}</p>
+                <div style={{background:'#f5f4ee',borderRadius:'10px',padding:'14px 24px',display:'inline-block',marginBottom:'20px'}}>
+                  <div style={{fontFamily:'Cairo,sans-serif',fontSize:'11px',color:'#988561',marginBottom:'4px'}}>{t?'رقم رسالتك المرجعي':'Message Reference'}</div>
+                  <div style={{fontFamily:'monospace',fontSize:'22px',fontWeight:900,color:'#002623'}}>{done.ref}</div>
+                </div>
+                <br/>
+                <button onClick={()=>{setDone(null);setForm({full_name:'',contact:'',subject:'',body:''}); }} style={{padding:'10px 24px',background:'#428177',color:'#edebe0',border:'none',borderRadius:'8px',fontFamily:'Cairo,sans-serif',fontWeight:700,fontSize:'14px',cursor:'pointer'}}>{t?'إرسال رسالة أخرى':'Send Another'}</button>
+              </div>
+            ):(
+              <>
+                <h2 style={{fontFamily:'Cairo,sans-serif',fontWeight:700,fontSize:'22px',color:'#002623',margin:'0 0 6px'}}>{t?'أرسل لنا رسالة':'Send Us a Message'}</h2>
+                <p style={{fontFamily:'Cairo,sans-serif',fontSize:'13px',color:'#988561',margin:'0 0 24px'}}>{t?'اقتراح لتحسين العمل النقابي أو تحسين الموقع لخدمتكم':'Suggestions for improving union work or the website'}</p>
+                {err&&<div style={{background:'rgba(192,57,43,.1)',border:'1px solid #c0392b',borderRadius:'8px',padding:'10px 14px',marginBottom:'16px',fontFamily:'Cairo,sans-serif',fontSize:'13px',color:'#c0392b'}}>{err}</div>}
+                {[['الاسم الكامل *','Full Name *','full_name'],['البريد الإلكتروني أو رقم الهاتف','Email or Phone','contact'],['موضوع الرسالة','Message Subject','subject']].map(([ar,en,k])=>(
+                  <div key={k} style={{marginBottom:'16px'}}>
+                    <label style={{display:'block',fontFamily:'Cairo,sans-serif',fontSize:'13px',fontWeight:600,color:'#002623',marginBottom:'6px'}}>{t?ar:en}</label>
+                    <input type="text" value={form[k]} onChange={e=>setF(k,e.target.value)} style={inp} onFocus={foc} onBlur={blu}/>
+                  </div>
+                ))}
+                <div style={{marginBottom:'20px'}}>
+                  <label style={{display:'block',fontFamily:'Cairo,sans-serif',fontSize:'13px',fontWeight:600,color:'#002623',marginBottom:'6px'}}>{t?'تفاصيل الرسالة *':'Message Details *'}</label>
+                  <textarea value={form.body} onChange={e=>setF('body',e.target.value)} rows="5" style={{...inp,resize:'vertical',minHeight:'120px'}} placeholder={t?'اكتب رسالتك هنا...':'Write your message here...'} onFocus={foc} onBlur={blu}/>
+                </div>
+                <button onClick={send} disabled={loading} style={{width:'100%',padding:'13px',background:loading?'#988561':'#428177',color:'#edebe0',border:'none',borderRadius:'8px',fontFamily:'Cairo,sans-serif',fontSize:'15px',fontWeight:700,cursor:loading?'not-allowed':'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:'10px'}} onMouseEnter={e=>{if(!loading)e.currentTarget.style.background='#054239';}} onMouseLeave={e=>{if(!loading)e.currentTarget.style.background='#428177';}}>
+                  {loading?<><span className="spinner"></span>{t?'جارٍ الإرسال...':'Sending...'}</>:(t?'إرسال الرسالة':'Send Message')}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+};
+
+// ── App ──
+const App=()=>{
+  const [page,setPage]=React.useState('home');
+  const [lang,setLang]=React.useState('ar');
+  React.useEffect(()=>{document.documentElement.lang=lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';},[lang]);
+  React.useEffect(()=>{window.scrollTo({top:0,behavior:'smooth'});},[page]);
+  const render=()=>{
+    const p={lang,setPage};
+    switch(page){case 'home':return <HomePage {...p}/>;case 'news':return <NewsPage {...p}/>;case 'services':return <ServicesPage {...p}/>;case 'complaints':return <ComplaintsPage {...p}/>;case 'contact':return <ContactPage {...p}/>;default:return <HomePage {...p}/>;}
+  };
+  return(<div style={{minHeight:'100vh',display:'flex',flexDirection:'column'}}><Navbar page={page} setPage={setPage} lang={lang} setLang={setLang}/><main style={{flex:1}}>{render()}</main><Footer setPage={setPage} lang={lang}/></div>);
+};
+
+const ls=document.getElementById('loading-screen');
+const lb=document.getElementById('loading-bar');
+let prog=0;
+const iv=setInterval(()=>{prog+=Math.random()*18+4;if(prog>=95){prog=95;clearInterval(iv);}lb.style.width=prog+'%';},100);
+const fin=()=>{clearInterval(iv);lb.style.width='100%';setTimeout(()=>{ls.style.opacity='0';ls.style.visibility='hidden';setTimeout(()=>{if(ls.parentNode)ls.remove();},650);},300);};
+const root=ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+Promise.all([new Promise(r=>setTimeout(r,1800))]).then(fin);
+</script>
+</body>
+</html>
